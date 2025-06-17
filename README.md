@@ -1,7 +1,7 @@
 # Sports Analytics Portfolio
 
-This interactive Shiny app explores 4th down decision-making in the NFL using `nflfastR` play-by-play data from 2018 to 2023.
-
+This repository now hosts a Shiny portfolio with a home screen that links to multiple projects.
+The first project explores 4th down decision-making in the NFL using `nflfastR` play-by-play data from 2018 to 2023.
 It compares actual coaching decisions to an analytics-based recommendation model and visualizes trends, success rates, and league-wide behavior.
 
 🔗 **Live App**: [https://yourname.shinyapps.io/sports_analytics_portfolio](https://yourname.shinyapps.io/sports_analytics_portfolio)
