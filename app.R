@@ -29,19 +29,28 @@ pbp <- bind_rows(
     fourth_down_success = if_else(went_for_it & yards_gained >= ydstogo, TRUE, FALSE, missing = NA)
   )
 
-# UI
-ui <- fluidPage(
+# UI for the 4th down analysis project
+project_4th_down_ui <- fluidPage(
   titlePanel("NFL 4th Down Decision-Making: Analytics vs Reality"),
   sidebarLayout(
     sidebarPanel(
       selectInput("team", "Select Team:", choices = unique(pbp$posteam)),
-      sliderInput("yardline", "Field Position (distance from end zone):",
-                  min = 1, max = 99, value = c(1, 99), step = 1),
-      selectInput("quarter", "Quarter:",
-                  choices = c("All" = "all", "1", "2", "3", "4"), selected = "all"),
-      sliderInput("score_diff", "Score Differential (team - opponent):",
-                  min = -30, max = 30, value = c(-30, 30), step = 1),
-      checkboxInput("show_all_seasons", "Show All Seasons for Selected Team", value = FALSE)
+      sliderInput(
+        "yardline", "Field Position (distance from end zone):",
+        min = 1, max = 99, value = c(1, 99), step = 1
+      ),
+      selectInput(
+        "quarter", "Quarter:",
+        choices = c("All" = "all", "1", "2", "3", "4"), selected = "all"
+      ),
+      sliderInput(
+        "score_diff", "Score Differential (team - opponent):",
+        min = -30, max = 30, value = c(-30, 30), step = 1
+      ),
+      checkboxInput(
+        "show_all_seasons", "Show All Seasons for Selected Team",
+        value = FALSE
+      )
     ),
     mainPanel(
       tabsetPanel(
@@ -54,8 +63,30 @@ ui <- fluidPage(
   )
 )
 
+# Simple home page with links to projects
+home_ui <- fluidPage(
+  h2("Welcome to the Sports Analytics Portfolio"),
+  p("Select a project from the navigation bar above."),
+  tags$ul(
+    tags$li(actionLink("open_4th_down", "NFL 4th Down Decision-Making")),
+    tags$li("More projects coming soon!")
+  )
+)
+
+# Portfolio navigation structure
+ui <- navbarPage(
+  title = "Sports Analytics Portfolio",
+  id = "main_nav",
+  tabPanel("Home", home_ui),
+  tabPanel("NFL 4th Down", project_4th_down_ui)
+)
+
 # Server
-server <- function(input, output) {
+server <- function(input, output, session) {
+
+  observeEvent(input$open_4th_down, {
+    updateTabsetPanel(session, "main_nav", selected = "NFL 4th Down")
+  })
   
   filtered_pbp <- reactive({
     pbp %>%
