@@ -16,7 +16,7 @@ It compares actual coaching decisions to an analytics-based recommendation model
 ## Technologies Used
 
 - **R** / **Shiny**
-- `nflfastR`, `tidyverse`, `gt`, `plotly`, `ggimage`, `DT`
+- `nflfastR`, `tidyverse`, `gt`, `plotly`, `ggimage`, `ggrepel`, `DT`
 - Hosted on **[shinyapps.io](https://shinyapps.io)**  
 - Version-controlled via **GitHub**
 

@@ -5,6 +5,7 @@ library(gt)
 library(DT)
 library(ggimage)
 library(plotly)
+library(ggrepel)
 
 team_colors <- nflfastR::teams_colors_logos %>%
   select(posteam = team_abbr, team_color, team_logo_espn)
@@ -158,14 +159,24 @@ server <- function(input, output, session) {
     data <- team_summary_combined() %>% left_join(team_colors, by = "posteam")
     team_highlighted <- input$team
     color_selected <- data %>% filter(posteam == team_highlighted) %>% pull(team_color)
-    
+
+    data <- data %>% mutate(
+      is_highlighted = posteam == team_highlighted,
+      point_size = ifelse(is_highlighted, 5, 2)
+    )
+
     ggplot(data, aes(x = Recommended_Rate, y = Go_Rate)) +
-      geom_point(aes(color = posteam == team_highlighted, size = posteam == team_highlighted)) +
-      geom_text(aes(label = posteam, fontface = ifelse(posteam == team_highlighted, "bold", "plain"), color = posteam == team_highlighted), nudge_y = 0.02, show.legend = FALSE) +
-      geom_image(data = filter(data, posteam == team_highlighted),
+      geom_point(aes(color = is_highlighted, size = point_size), show.legend = FALSE) +
+      geom_text(data = filter(data, !is_highlighted),
+                aes(label = posteam, color = is_highlighted),
+                fontface = "plain", show.legend = FALSE) +
+      geom_text_repel(data = filter(data, is_highlighted),
+                      aes(label = posteam, color = is_highlighted),
+                      fontface = "bold", show.legend = FALSE) +
+      geom_image(data = filter(data, is_highlighted),
                  aes(x = Recommended_Rate, y = Go_Rate, image = team_logo_espn), size = 0.06, asp = 1.5, inherit.aes = FALSE) +
       scale_color_manual(values = c("FALSE" = "gray", "TRUE" = color_selected), guide = "none") +
-      scale_size_manual(values = c("FALSE" = 2, "TRUE" = 5), guide = "none") +
+      scale_size_identity() +
       geom_abline(linetype = "dashed") +
       labs(title = "Actual vs Recommended 4th Down Rate", x = "Analytics Recommendation", y = "Coach Decision")
   })
@@ -174,24 +185,34 @@ server <- function(input, output, session) {
     data <- team_summary_combined() %>% left_join(team_colors, by = "posteam")
     team_highlighted <- input$team
     color_selected <- data %>% filter(posteam == team_highlighted) %>% pull(team_color)
-    
+
+    data <- data %>% mutate(
+      is_highlighted = posteam == team_highlighted,
+      point_size = ifelse(is_highlighted, 5, 2)
+    )
+
     league_avg_success <- mean(filtered_pbp()$fourth_down_success, na.rm = TRUE)
     league_avg_go_rate <- mean(filtered_pbp()$went_for_it, na.rm = TRUE)
-    
+
     max_x <- max(data$Go_Rate, na.rm = TRUE)
     max_y <- max(data$Success_Rate, na.rm = TRUE)
-    
+
     ggplot(data, aes(x = Go_Rate, y = Success_Rate)) +
-      geom_point(aes(color = posteam == team_highlighted, size = posteam == team_highlighted)) +
-      geom_text(aes(label = posteam, fontface = ifelse(posteam == team_highlighted, "bold", "plain"), color = posteam == team_highlighted), nudge_y = 0.015, show.legend = FALSE) +
-      geom_image(data = filter(data, posteam == team_highlighted),
+      geom_point(aes(color = is_highlighted, size = point_size), show.legend = FALSE) +
+      geom_text(data = filter(data, !is_highlighted),
+                aes(label = posteam, color = is_highlighted),
+                fontface = "plain", show.legend = FALSE) +
+      geom_text_repel(data = filter(data, is_highlighted),
+                      aes(label = posteam, color = is_highlighted),
+                      fontface = "bold", show.legend = FALSE) +
+      geom_image(data = filter(data, is_highlighted),
                  aes(x = Go_Rate, y = Success_Rate, image = team_logo_espn), size = 0.06, asp = 1.5, inherit.aes = FALSE) +
       geom_hline(yintercept = league_avg_success, linetype = "dashed", color = "black") +
       geom_vline(xintercept = league_avg_go_rate, linetype = "dashed", color = "black") +
       annotate("text", x = max_x, y = league_avg_success + 0.005, label = "Avg Success Rate", hjust = 0.5, size = 3.5) +
       annotate("text", x = league_avg_go_rate + 0.0025, y = max_y - 0.005, label = "Avg Go Rate", angle = 90, hjust = 0, size = 3.5) +
       scale_color_manual(values = c("FALSE" = "gray", "TRUE" = color_selected), guide = "none") +
-      scale_size_manual(values = c("FALSE" = 2, "TRUE" = 5), guide = "none") +
+      scale_size_identity() +
       labs(title = "Go-For-It Rate vs Success Rate", x = "Go Rate", y = "Success Rate")
   })
   
