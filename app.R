@@ -6,29 +6,53 @@ library(DT)
 library(ggimage)
 library(plotly)
 library(ggrepel)
+library(httr)
+library(jsonlite)
 
 team_colors <- nflfastR::teams_colors_logos %>%
   select(posteam = team_abbr, team_color, team_logo_espn)
 
-# Load data
-pbp <- bind_rows(
-  load_pbp(2018),
-  load_pbp(2019),
-  load_pbp(2020),
-  load_pbp(2021),
-  load_pbp(2022),
-  load_pbp(2023)
-) %>%
-  filter(down == 4, !is.na(play_type), !is.na(ydstogo), !is.na(yards_gained), !is.na(score_differential)) %>%
-  mutate(
-    went_for_it = play_type %in% c("run", "pass"),
-    go_for_it_manual = case_when(
-      ydstogo <= 4 & yardline_100 <= 50 & (!goal_to_go | ydstogo != yardline_100) ~ TRUE,
-      TRUE ~ FALSE
+# Load data --------------------------------------------------------------
+load_pbp_supabase <- function(url = Sys.getenv("SUPABASE_URL"),
+                              key = Sys.getenv("SUPABASE_KEY")) {
+
+  if (url == "" || key == "") {
+    stop("SUPABASE_URL and SUPABASE_KEY must be set")
+  }
+
+  res <- httr::GET(
+    paste0(url, "/rest/v1/pbp"),
+    httr::add_headers(
+      apikey = key,
+      Authorization = paste("Bearer", key),
+      Accept = "application/json"
     ),
-    followed_model = went_for_it == go_for_it_manual,
-    fourth_down_success = if_else(went_for_it & yards_gained >= ydstogo, TRUE, FALSE, missing = NA)
+    query = list(select = "*")
   )
+
+  if (httr::status_code(res) == 200) {
+    jsonlite::fromJSON(httr::content(res, as = "text", encoding = "UTF-8"))
+  } else {
+    stop("Supabase request failed with status ", httr::status_code(res))
+  }
+}
+
+process_pbp <- function(dat) {
+  dat %>%
+    filter(down == 4, !is.na(play_type), !is.na(ydstogo), !is.na(yards_gained), !is.na(score_differential)) %>%
+    mutate(
+      went_for_it = play_type %in% c("run", "pass"),
+      go_for_it_manual = case_when(
+        ydstogo <= 4 & yardline_100 <= 50 & (!goal_to_go | ydstogo != yardline_100) ~ TRUE,
+        TRUE ~ FALSE
+      ),
+      followed_model = went_for_it == go_for_it_manual,
+      fourth_down_success = if_else(went_for_it & yards_gained >= ydstogo, TRUE, FALSE, missing = NA)
+    )
+}
+
+# Load data from Supabase when the app starts
+pbp <- process_pbp(load_pbp_supabase())
 
 # UI for the 4th down analysis project
 project_4th_down_ui <- fluidPage(
@@ -99,7 +123,7 @@ server <- function(input, output, session) {
         score_differential <= input$score_diff[2]
       )
   })
-  
+
   team_summary_combined <- reactive({
     filtered_pbp() %>%
       group_by(posteam) %>%

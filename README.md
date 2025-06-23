@@ -17,8 +17,16 @@ It compares actual coaching decisions to an analytics-based recommendation model
 
 - **R** / **Shiny**
 - `nflfastR`, `tidyverse`, `gt`, `plotly`, `ggimage`, `ggrepel`, `DT`
-- Hosted on **[shinyapps.io](https://shinyapps.io)**  
+- Hosted on **[shinyapps.io](https://shinyapps.io)**
 - Version-controlled via **GitHub**
+
+## Supabase Integration
+
+Play-by-play data must be stored in a Supabase table named `pbp`. Create a
+`.Renviron` file in the project directory containing the variables
+`SUPABASE_URL` and `SUPABASE_KEY`. The app reads these credentials at startup
+and fetches the data using Supabase's REST API. If the request fails, the app
+will display an error.
 
 ## Screenshots
 
